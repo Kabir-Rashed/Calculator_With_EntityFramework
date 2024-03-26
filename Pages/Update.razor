@@ -1,0 +1,186 @@
+﻿@page "/Update"
+@using Server_Calculator.Models
+@using Microsoft.EntityFrameworkCore
+@inject Server_Calculator.Data.CalculatorContext DataContext
+@inject NavigationManager NavigationManager
+@inject Server_Calculator.Services.CalculationServie CalculatriceService
+
+
+<h3>Update Calculation</h3>
+
+<p class="h5">First</p>
+
+
+<div class="input-group flex-nowrap">
+
+    <input type="number" class="form-control" min="0" placeholder="First Number" aria-describedby="addon-wrapping" @bind=FirstInput>
+</div>
+
+
+<div class="d-flex flex-row justify-content-center align-items-center gap-3 py-3">
+    <button type="button" class="btn btn-primary" style="margin:20px; padding:10px 20px;" @onclick=addNum>+</button>
+    <button type="button" class="btn btn-primary" style="margin:20px; padding:10px 20px;" @onclick=subNum>-</button>
+    <button type="button" class="btn btn-primary" style="margin:20px; padding:10px 20px;" @onclick=mulNum>*</button>
+    <button type="button" class="btn btn-primary" style="margin:20px; padding:10px 20px;" @onclick=divNum>/</button>
+    <button type="button" class="btn btn-success" style="margin:20px; padding:10px 20px;" @onclick=isEqual>=</button>
+    <button type="button" class="btn btn-warning" style="margin:20px; padding:10px 20px;" @onclick=refresh>c</button>
+</div>
+
+
+<p class="h5">Second</p>
+
+
+<div class="input-group flex-nowrap">
+
+    <input type="number" class="form-control" placeholder="Second Number" aria-describedby="addon-wrapping" @bind=SecondInput>
+</div>
+
+
+<div class="d-grid gap-2 col-3 mx-auto" style="margin-top : 50px;">
+    <p>Result: @result </p>
+    <p>History: @FullData</p>
+    <button type="button" class="btn btn-danger" @onclick=UpdateData>UPDATE</button>
+</div>
+
+
+@code {
+
+    string operation = "";
+    double FirstInput;
+    double SecondInput;
+    double result;
+ 
+    string FullData = "";
+    bool isFirstint = true;
+
+
+
+
+    private void addNum()
+    {
+        if (isFirstint)
+        {
+            operation = "+";
+            result = FirstInput;
+            isFirstint = false;
+        }
+        else
+        {
+            result = FirstInput + SecondInput;
+            FullData = FirstInput + " + " + SecondInput + " = " + result;
+        }
+    }
+
+    private void subNum()
+    {
+        if (isFirstint)
+        {
+            operation = "-";
+            result = FirstInput;
+            isFirstint = false;
+        }
+        else
+        {
+            result = FirstInput - SecondInput;
+            FullData = FirstInput + " - " + SecondInput + " = " + result;
+        }
+    }
+
+    private void mulNum()
+    {
+        if (isFirstint)
+        {
+            operation = "*";
+            result = FirstInput;
+            isFirstint = false;
+        }
+        else
+        {
+            result = FirstInput * SecondInput;
+            FullData = FirstInput + " x " + SecondInput + " = " + result;
+        }
+    }
+
+    private void divNum()
+    {
+        if (isFirstint)
+        {
+            operation = "/";
+            result = FirstInput;
+            isFirstint = false;
+        }
+        else
+        {
+            result = FirstInput / SecondInput;
+            FullData = FirstInput + " / " + SecondInput + " = " + result;
+        }
+    }
+
+    private void isEqual()
+    {
+        switch (operation)
+        {
+            case "+":
+                addNum();
+                break;
+            case "-":
+                subNum();
+                break;
+            case "*":
+                mulNum();
+                break;
+            case "/":
+                divNum();
+                break;
+            default:
+                break;
+        }
+        isFirstint = true;
+    }
+
+    private void refresh()
+    {
+        isFirstint = true;
+        FirstInput = 0;
+        SecondInput = 0;
+        result = 0;
+        FullData = "";
+    }
+
+
+
+
+    // Method pour Update
+    protected override void OnInitialized()
+    {
+        var calculation = CalculatriceService.currentCalculation;
+    }
+
+    public async Task UpdateData()
+    {
+        if (FullData != "")
+        {
+            //It's querying the database to find a calculation record (oldCalculation) based on its ID.
+            //It's checking if the ID of the current calculation stored in CalculatriceService matches the ID of any calculation in the database.
+            //If a match is found, oldCalculation will hold the first calculation record that matches the condition.
+            var oldCalculation = await DataContext.Calculatrice_Saved.FirstOrDefaultAsync(c => c.ID == CalculatriceService.currentCalculation.ID);
+            if(oldCalculation != null)
+            {
+                oldCalculation.Number1 = CalculatriceService.currentCalculation.Number1;
+                oldCalculation.Number1 = FirstInput;
+                oldCalculation.Operator = operation;
+                oldCalculation.Number2 = CalculatriceService.currentCalculation.Number2;
+                oldCalculation.Number2 = SecondInput;
+                oldCalculation.Result = result;
+
+
+                await DataContext.SaveChangesAsync();
+
+
+                NavigationManager.NavigateTo("FetchData");
+            }
+
+        }
+    }
+
+}

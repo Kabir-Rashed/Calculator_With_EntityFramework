@@ -1,0 +1,88 @@
+﻿@page "/fetchdata"
+@using Microsoft.EntityFrameworkCore
+@using Server_Calculator.Models
+@using System.Threading.Tasks
+@inject NavigationManager NavigatioManager
+@inject Server_Calculator.Data.CalculatorContext DataContext
+@inject Server_Calculator.Services.CalculationServie CalculatriceService
+
+
+<PageTitle>Table</PageTitle>
+
+<table class="table">
+    <tbody>
+        @if (savedCalculation != null)
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>First Number</th>
+                        <th>Operator</th>
+                        <th>Second Number</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var calculation in savedCalculation)
+                    {
+                        <tr>
+                            <td>
+                                @if (editingID == calculation.ID)
+                                {
+                                    <input type="number" @bind="calculation.Number1" />
+                                    
+                                }
+                                else
+                                {
+                                    @calculation.Number1
+                                    
+                                }
+                            </td>
+                            <td>@calculation.Operator</td>
+                            <td>@calculation.Number2</td>
+                            <td>@calculation.Result</td>
+                            <td><button type="button" class="btn btn-danger" @onclick="() =>  DeleteCalculation(calculation)">Delete</button></td>
+                            <td><button type="button" class="btn btn-warning" @onclick="() => Edit(calculation)">Update</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No saved calculations found.</p>
+        }
+    </tbody>
+</table>
+
+@code {
+    List<Server_Calculator.Models.Calculatrice>? savedCalculation;
+    private int? editingID;
+
+    //Method pour recuperer les donnees et ajouter dans la liste
+    protected override async Task OnInitializedAsync()
+    {
+        savedCalculation = await DataContext.Calculatrice_Saved.ToListAsync();
+    }
+
+    //Method pour supprimer "Delete"
+    private async Task DeleteCalculation(Calculatrice calculatrice)
+    {
+        savedCalculation.Remove(calculatrice);
+        DataContext.Calculatrice_Saved.Remove(calculatrice);
+        await DataContext.SaveChangesAsync();
+    }
+
+    //Method pour naviger a Page Update 
+    private void Edit(Calculatrice calculatrice)
+    {
+        CalculatriceService.currentCalculation = calculatrice;
+        NavigatioManager.NavigateTo("/Update");
+    }
+
+    private async Task Save(Calculatrice calculatrice)
+    {
+        await DataContext.SaveChangesAsync();
+        editingID = null;
+    }
+}
